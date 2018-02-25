@@ -11,6 +11,7 @@
 #include <iostream>
 #include <vector>
 #include <math.h>
+#include <bitset>
 
 #define PORT 8001
 using namespace std;
@@ -105,7 +106,7 @@ int main(int argc, char ** argv) {
 
 	//creating octoblocks
 	int tempFileSize = file.fileSize;
-	if(file.fileSize < 8888){
+	if(file.fileSize <= 8888){
 	  //create single octoBlock and checking if it needs a tiny block
 	  double tempLegSize = (double)tempFileSize / (double) 8;
 	  tempLegSize = floor(tempLegSize);
@@ -114,6 +115,7 @@ int main(int argc, char ** argv) {
 	    //tinyOctoBlock creation
 	    file.blocks[1].octoBID = 1;
 	    file.blocks[1].start = OB1Size;
+	    //it is supposed to be - 1 FUCKING KEEP IT THIS WAY AND DON'T THINK ABOUT IT AGAIN
 	    file.blocks[1].end = file.fileSize - 1;
 	    file.numOfOctoB++;
 	  }
@@ -125,24 +127,43 @@ int main(int argc, char ** argv) {
 	  
 	}else{
 	  //create multiple octoBlocks
+	  cout<<"in the else that creates multiple octoblocks"<<endl;
 	}
 	//creating octolegs in each octoblock
 	for(int i = 0; i < file.numOfOctoB; i++){
-	  int legRange = file.blocks[i].start - file.blocks[i].end;
+	  //will have to change range for more than one octoblock legs
+	  int legRange = (file.blocks[i].end - file.blocks[i].start+1)/8;
+	  cout<<"value of legRange: "<<legRange<<endl;
 	  for(int j = 0; j < 8; j++){
 	    file.blocks[i].octoLegs[j].octoBlockID = file.blocks[i].octoBID;
-	    file.blocks[i].octoLegs[j].start = (legRange * j) - 1;
-	    file.blocks[i].octoLegs[j].end = file.blocks[i].octoLegs[j].start + legRange;
+	    file.blocks[i].octoLegs[j].octoLegID = j;
+	    file.blocks[i].octoLegs[j].start = (legRange * j);
+	    file.blocks[i].octoLegs[j].end = file.blocks[i].octoLegs[j].start + legRange - 1;
 	    file.blocks[i].octoLegs[j].octoBlockID = file.blocks[i].octoBID;
 	    file.blocks[i].octoLegs[j].sequenceCheck = 0x01;
 	    for (int m = 0; m < j; m++){
-	      file.blocks[i].octoLegs[j].sequenceCheck << 1;
+	      file.blocks[i].octoLegs[j].sequenceCheck =
+		file.blocks[i].octoLegs[j].sequenceCheck << 1;
 	    }
 	  }
 	}
 
-
-
+	for(int i = 0; i < file.numOfOctoB; i++){
+	  cout<<"BID of each octoblock "<<file.blocks[i].octoBID<<endl;
+	  cout<<"start for block "<<file.blocks[i].start<<endl;
+	  cout<<"end of block "<<file.blocks[i].end<<endl;
+	  cout<<endl;
+	  for(int j = 0; j < 8; j++){
+	    cout<<"octoleg BID: "<<file.blocks[i].octoLegs[j].octoBlockID
+		<<". octoleg ID: "<<file.blocks[i].octoLegs[j].octoLegID<<endl;
+	    cout<<"leg start: "<<file.blocks[i].octoLegs[j].start<<endl;
+	    cout<<"leg end: "<<file.blocks[i].octoLegs[j].end<<endl;
+	    cout<<"leg's sequenceChec: "<<bitset<8>(file.blocks[i].octoLegs[j].sequenceCheck)<<endl;
+	  }
+	  cout<<"-----------------------------------------------------------------"
+	    <<endl<<endl<<endl;
+	}
+	
 
 	
 	// close the socket
