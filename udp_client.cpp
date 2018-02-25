@@ -37,6 +37,7 @@ struct myFile{
   char fileName[100] = "";
   int fileSize = 0;
   int numOfOctoB;
+  int remSize = 0;
   int currentOctoB = 0;
   octoBlock blocks[30];
 };
@@ -128,6 +129,15 @@ int main(int argc, char ** argv) {
 	}else{
 	  //create multiple octoBlocks
 	  cout<<"in the else that creates multiple octoblocks"<<endl;
+	  double numOfBlocks = (double)file.fileSize/(double)8888;
+	  numOfBlocks = floor(numOfBlocks);
+	  for(int i = 0; i < numOfBlocks; i++){
+	    file.numOfOctoB++;
+	    file.blocks[i].octoBID = i;
+	    file.blocks[i].start = 8888 * i;
+	    file.blocks[i].end = 8888 * i + 8888;
+	    cout<<"created multiple octoblocks"<<endl;
+	  }
 	}
 	//creating octolegs in each octoblock
 	for(int i = 0; i < file.numOfOctoB; i++){
