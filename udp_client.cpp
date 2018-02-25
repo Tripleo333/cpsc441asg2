@@ -1,3 +1,8 @@
+/*
+ *check out
+ *https://www.binarytides.com/raw-udp-sockets-c-linux/
+ *for help on creating a raw UDP header
+ */
 #include <arpa/inet.h>
 #include <stdio.h>
 #include <string.h>
@@ -5,20 +10,21 @@
 #include <unistd.h>
 #include <iostream>
 #include <vector>
+#include <math.h>
 
 #define PORT 8001
 using namespace std;
 struct octoLeg{
-  int octoBlockID;
-  int octoLegID;
+  int octoBlockID = -1;
+  int octoLegID = -1;
   int start;
   int end;
   char legBuff[1111];
-  unsigned char squenceCheck = 0x00;
+  unsigned char sequenceCheck = 0x00;
 };
 
 struct octoBlock{
-  int octoBID;
+  int octoBID = -1;
   int start;
   int end;
   char octoBuffer[8888];
@@ -97,7 +103,46 @@ int main(int argc, char ** argv) {
 	  exit(-1);
 	}
 
-	
+	//creating octoblocks
+	int tempFileSize = file.fileSize;
+	if(file.fileSize < 8888){
+	  //create single octoBlock and checking if it needs a tiny block
+	  double tempLegSize = (double)tempFileSize / (double) 8;
+	  tempLegSize = floor(tempLegSize);
+	  int OB1Size = 8*tempLegSize;
+	  if(OB1Size != file.fileSize){
+	    //tinyOctoBlock creation
+	    file.blocks[1].octoBID = 1;
+	    file.blocks[1].start = OB1Size;
+	    file.blocks[1].end = file.fileSize - 1;
+	    file.numOfOctoB++;
+	  }
+	  file.blocks[0].octoBID = 0;
+	  file.blocks[0].start = 0;
+	  file.blocks[0].end = OB1Size - 1;
+	  file.numOfOctoB++;
+	  
+	  
+	}else{
+	  //create multiple octoBlocks
+	}
+	//creating octolegs in each octoblock
+	for(int i = 0; i < file.numOfOctoB; i++){
+	  int legRange = file.blocks[i].start - file.blocks[i].end;
+	  for(int j = 0; j < 8; j++){
+	    file.blocks[i].octoLegs[j].octoBlockID = file.blocks[i].octoBID;
+	    file.blocks[i].octoLegs[j].start = (legRange * j) - 1;
+	    file.blocks[i].octoLegs[j].end = file.blocks[i].octoLegs[j].start + legRange;
+	    file.blocks[i].octoLegs[j].octoBlockID = file.blocks[i].octoBID;
+	    file.blocks[i].octoLegs[j].sequenceCheck = 0x01;
+	    for (int m = 0; m < j; m++){
+	      file.blocks[i].octoLegs[j].sequenceCheck << 1;
+	    }
+	  }
+	}
+
+
+
 
 	
 	// close the socket

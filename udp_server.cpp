@@ -10,12 +10,11 @@
 #include <sys/stat.h>
 #include <string>
 #include <unistd.h>
+#include <math.h>
 
 #define PORT 8001
 
 using namespace std;
-
-
 
 struct octoLeg{
   int octoBlockID;
