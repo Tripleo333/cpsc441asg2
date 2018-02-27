@@ -171,8 +171,8 @@ int main(int argc, char ** argv) {
 	//creating octolegs in each octoblock
 	for(int i = 0; i < file.numOfOctoB; i++){
 	  //will have to change range for more than one octoblock legs
-	  int legRange = (file.blocks[i].end + 1 - file.blocks[i].start + 1)/8;
-	  
+	  int legRange = (file.blocks[i].end + 1 - file.blocks[i].start)/8;
+  //double legRange = ((double)file.blocks[i].end + 1.0 - (double)file.blocks[i].start )/8.0;
 	  cout<<"value of legRange: "<<legRange<<endl;
 	  if(legRange > 7){
 	    for(int j = 0; j < 8; j++){
@@ -180,18 +180,58 @@ int main(int argc, char ** argv) {
 	      file.blocks[i].octoLegs[j].octoLegID = j;
 	      file.blocks[i].octoLegs[j].start = (legRange * j) + file.blocks[i].start;
 	      file.blocks[i].octoLegs[j].end = file.blocks[i].octoLegs[j].start + legRange - 1;
-	      file.blocks[i].octoLegs[j].octoBlockID = file.blocks[i].octoBID;
+	      //file.blocks[i].octoLegs[j].octoBlockID = file.blocks[i].octoBID;
 	      file.blocks[i].octoLegs[j].sequenceCheck = 0x01;
 	      for (int m = 0; m < j; m++){
 		file.blocks[i].octoLegs[j].sequenceCheck =
 		  file.blocks[i].octoLegs[j].sequenceCheck << 1;
 	      }
 	    }
+	  }else{
+	    
+	    legRange = (file.blocks[i].end + 1 + file.blocks[i].start) % 8;
+	    cout<<endl<<"leg range of tiny octoblock: "<<legRange<<endl;
+	    int j = 0;
+	    for(j = 0; j < legRange; j++){
+	      //((file.blocks[i].end + 1 + file.blocks[i].start) % 8); j++){
+	      cout<<endl;
+	      file.blocks[i].octoLegs[j].octoBlockID = file.blocks[i].octoBID;
+	      file.blocks[i].octoLegs[j].octoLegID = j;
+	      file.blocks[i].octoLegs[j].start =  j + file.blocks[i].start;
+	      file.blocks[i].octoLegs[j].end = file.blocks[i].octoLegs[j].start;
+	      file.blocks[i].octoLegs[j].sequenceCheck = 0x01;
+	      for(int m = 0; m < j; m++){
+		file.blocks[i].octoLegs[j].sequenceCheck =
+		  file.blocks[i].octoLegs[j].sequenceCheck << 1;
+	      }
+	      cout<<"sequenceCheck of tiny block's legs with content: "<<file.blocks[i].octoLegs[j].sequenceCheck<<endl;
+	      cout<<"start of tiny block's legs with content: "<<file.blocks[i].octoLegs[j].start<<endl;
+	      cout<<"end of tiny block's legs with content: "<<file.blocks[i].octoLegs[j].end<<endl;
+	      cout<<endl;
+	    }
+	    cout<<"padding tiny block's legs\n"<<endl;
+	    for(j; j < 8; j++){
+	      file.blocks[i].octoLegs[j].octoBlockID = file.blocks[i].octoBID;
+	      file.blocks[i].octoLegs[j].octoLegID = j;
+	      file.blocks[i].octoLegs[j].start = -1;
+	      file.blocks[i].octoLegs[j].end = -1;
+	      for(int m = 0; m < j; m++){
+		file.blocks[i].octoLegs[j].sequenceCheck =
+		  file.blocks[i].octoLegs[j].sequenceCheck << 1;
+	      }
+	      cout<<"sequenceCheck of tiny block's legs with content: "<<file.blocks[i].octoLegs[j].sequenceCheck<<endl;
+	      cout<<"start of tiny block's legs with content: "<<file.blocks[i].octoLegs[j].start<<endl;
+	      cout<<"end of tiny block's legs with content: "<<file.blocks[i].octoLegs[j].end<<endl;
+	      cout<<endl;
+	      
+	      
+	    }
 	  }
 	}
 
+	
 	/*	for(int i = 0; i < file.numOfOctoB; i++){
-	  cout<<"BID of each octoblock "<<file.blocks[i].octoBID<<endl;
+		cout<<"BID of each octoblock "<<file.blocks[i].octoBID<<endl;
 	  cout<<"start for block "<<file.blocks[i].start<<endl;
 	  cout<<"end of block "<<file.blocks[i].end<<endl;
 	  cout<<endl;
