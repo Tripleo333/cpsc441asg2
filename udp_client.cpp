@@ -12,8 +12,11 @@
 #include <vector>
 #include <math.h>
 #include <bitset>
+#include <sys/types.h>
 
 #define PORT 8001
+#define retryLimit 5
+
 using namespace std;
 struct octoLeg{
   int octoBlockID = -1;
@@ -21,6 +24,7 @@ struct octoLeg{
   int start;
   int end;
   char legBuff[1111];
+  int retry = 0;
   unsigned char sequenceCheck = 0x00;
 };
 
@@ -46,6 +50,7 @@ struct myFile{
 int main(int argc, char ** argv) {
 	const char* server_name = "localhost";//loopback
 	const int server_port = PORT;
+	
 
 	if(argc != 2){
 	  printf("Please enter a file name\n");
@@ -107,7 +112,7 @@ int main(int argc, char ** argv) {
 
 	//creating octoblocks
 	int tempFileSize = file.fileSize;
-	if(file.fileSize <= 8888){
+	/*	if(file.fileSize <= 8888){
 	  //create single octoBlock and checking if it needs a tiny block
 	  double tempLegSize = (double)tempFileSize / (double) 8;
 	  tempLegSize = floor(tempLegSize);
@@ -126,8 +131,8 @@ int main(int argc, char ** argv) {
 	  file.numOfOctoB++;
 	  
 	  
-	}else{
-	  //create multiple octoBlocks
+	}else{*/
+	  //create multiple full octoBlocks
 	  cout<<"in the else that creates multiple octoblocks"<<endl;
 	  double numOfBlocks = (double)file.fileSize/(double)8888;
 	  numOfBlocks = floor(numOfBlocks);
@@ -138,27 +143,54 @@ int main(int argc, char ** argv) {
 	    file.blocks[i].end = 8888 * i + 8888;
 	    cout<<"created multiple octoblocks"<<endl;
 	  }
-	}
+	  //creating partial octoblock
+
+	  if((file.fileSize > ((8888 * file.numOfOctoB)))){
+	    //if the filesize is more than the end of the last full octoblock
+	    cout<<"creating partial octoblock"<<endl;
+	    int thisBID = file.numOfOctoB;
+	    file.numOfOctoB++;
+	    file.blocks[thisBID].octoBID = thisBID;
+	    file.blocks[thisBID].start = file.blocks[thisBID-1].end + 1;
+	    int endPB = file.fileSize - file.blocks[thisBID-1].end;
+	    endPB = (double)floor((double)endPB / 8.0);
+	    file.blocks[thisBID].end = file.blocks[thisBID].start + (8*endPB) - 2;//maybe?
+	    if(file.fileSize > file.blocks[thisBID].end+1){
+	      //create tiny octoblock
+	      cout<<"creating a tiny octoblock"<<endl;
+	      thisBID++;
+	      file.numOfOctoB++;
+	      file.blocks[thisBID].octoBID = thisBID;
+	      file.blocks[thisBID].start = file.blocks[thisBID -1].end +1;
+	      cout<<"tiny octoblock start: "<<file.blocks[thisBID].start<<endl;
+	      file.blocks[thisBID].end = file.fileSize - 1;
+	      cout<<"tiny octoblok end: "<<file.blocks[thisBID].end<<endl<<endl;
+	    }
+	  }
+	  //}
 	//creating octolegs in each octoblock
 	for(int i = 0; i < file.numOfOctoB; i++){
 	  //will have to change range for more than one octoblock legs
-	  int legRange = (file.blocks[i].end - file.blocks[i].start+1)/8;
+	  int legRange = (file.blocks[i].end + 1 - file.blocks[i].start + 1)/8;
+	  
 	  cout<<"value of legRange: "<<legRange<<endl;
-	  for(int j = 0; j < 8; j++){
-	    file.blocks[i].octoLegs[j].octoBlockID = file.blocks[i].octoBID;
-	    file.blocks[i].octoLegs[j].octoLegID = j;
-	    file.blocks[i].octoLegs[j].start = (legRange * j);
-	    file.blocks[i].octoLegs[j].end = file.blocks[i].octoLegs[j].start + legRange - 1;
-	    file.blocks[i].octoLegs[j].octoBlockID = file.blocks[i].octoBID;
-	    file.blocks[i].octoLegs[j].sequenceCheck = 0x01;
-	    for (int m = 0; m < j; m++){
-	      file.blocks[i].octoLegs[j].sequenceCheck =
-		file.blocks[i].octoLegs[j].sequenceCheck << 1;
+	  if(legRange > 7){
+	    for(int j = 0; j < 8; j++){
+	      file.blocks[i].octoLegs[j].octoBlockID = file.blocks[i].octoBID;
+	      file.blocks[i].octoLegs[j].octoLegID = j;
+	      file.blocks[i].octoLegs[j].start = (legRange * j) + file.blocks[i].start;
+	      file.blocks[i].octoLegs[j].end = file.blocks[i].octoLegs[j].start + legRange - 1;
+	      file.blocks[i].octoLegs[j].octoBlockID = file.blocks[i].octoBID;
+	      file.blocks[i].octoLegs[j].sequenceCheck = 0x01;
+	      for (int m = 0; m < j; m++){
+		file.blocks[i].octoLegs[j].sequenceCheck =
+		  file.blocks[i].octoLegs[j].sequenceCheck << 1;
+	      }
 	    }
 	  }
 	}
 
-	for(int i = 0; i < file.numOfOctoB; i++){
+	/*	for(int i = 0; i < file.numOfOctoB; i++){
 	  cout<<"BID of each octoblock "<<file.blocks[i].octoBID<<endl;
 	  cout<<"start for block "<<file.blocks[i].start<<endl;
 	  cout<<"end of block "<<file.blocks[i].end<<endl;
@@ -172,7 +204,7 @@ int main(int argc, char ** argv) {
 	  }
 	  cout<<"-----------------------------------------------------------------"
 	    <<endl<<endl<<endl;
-	}
+	    }*/
 	
 
 	
