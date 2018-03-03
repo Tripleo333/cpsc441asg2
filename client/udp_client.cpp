@@ -13,7 +13,7 @@
 #include <math.h>
 #include <bitset>
 #include <sys/types.h>
-
+#include <fstream>
 #define PORT 8001
 #define retryLimit 5
 
@@ -45,7 +45,7 @@ struct myFile{
   int currentOctoB = 0;
   octoBlock blocks[30];
 };
-
+char fileContents[300000];
 
 int main(int argc, char ** argv) {
   const char* server_name = "localhost";//loopback
@@ -246,8 +246,8 @@ int main(int argc, char ** argv) {
 	<<endl<<endl<<endl;
   }
   cout<<"number of blocks: "<<file.numOfOctoB<<endl;
-  FILE *recvFile =
-  fopen(argv[1], "wb");
+  // FILE *recvFile =
+    //  fopen(argv[1], "wb");
   for(int i = 0; i < file.numOfOctoB;i++){
     for(int j = 0; j < 8; j++){
       if(file.blocks[i].octoLegs[j].start != -1){
@@ -255,13 +255,20 @@ int main(int argc, char ** argv) {
 	//	cout<"size of buffer"<<file.blocks[i].octoLegs[j].legBuff;
 	
 	//	cout<"size of buffer"<<sizeof(file.blocks[i].octoLegs[j].legBuff);
-	fwrite(file.blocks[i].octoLegs[j].legBuff,sizeof(file.blocks[i].octoLegs[j].legBuff[0]),
-	       sizeof(file.blocks[i].octoLegs[j].legBuff)/sizeof(file.blocks[i].octoLegs[j].legBuff[0]),recvFile);
+	//	fwrite(file.blocks[i].octoLegs[j].legBuff,sizeof(file.blocks[i].octoLegs[j].legBuff[0]),
+	//     sizeof(file.blocks[i].octoLegs[j].legBuff)/sizeof(file.blocks[i].octoLegs[j].legBuff[0]),recvFile);
+	strcat(fileContents,file.blocks[i].octoLegs[j].legBuff);
 	cout<<"after writing"<<endl;
       }
     }
   }
-  fclose(recvFile);
+  //  fwrite(
+  ofstream myfile(argv[1]);
+  myfile <<fileContents;
+  myfile.close();
+  //  fclose(recvFile);
+  char closeCon[150] = "FILE RECIEVED";
+  sendto(sock,closeCon, 150, 0, (struct sockaddr*)&server_address, sizeof(server_address));
   
   // close the socket
   close(sock);
