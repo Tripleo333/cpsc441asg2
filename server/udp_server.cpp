@@ -98,6 +98,7 @@ int main(int argc, char *argv[]) {
   char fileContents[300000];
   // run indefinitely
   bool isMidTransfer = false;
+  char previousDataBuffer[1300];
   char sendBuffer [1300];
   bzero(sendBuffer, 1300);
   while (true) {
@@ -108,8 +109,12 @@ int main(int argc, char *argv[]) {
 		       (struct sockaddr *)&client_address,
 		       &client_address_len);
     
-    if(len < 0){
-      continue;
+    if(len < 0 ){
+      if(!isMidTransfer){
+	continue;
+      }else{
+	
+      }
     }
     cout<<"contents of buffer: "<<buffer<<endl;
   analysis:
@@ -136,8 +141,10 @@ int main(int argc, char *argv[]) {
       cout<<"got a start: "<<endl;
       int start = atoi(buffer+6);
       int end = atoi(strstr(buffer,"END")+4);
+      int octoLegID = atoi(strstr(buffer, "octoLegID: ")+12);
       cout<<"value of start: "<<start<<endl;
       cout<<"value of end: "<<end<<endl;
+      cout<<"value of octoLegID: "<<octoLegID<<endl;
       char dataBuffer[1111];
       bzero(dataBuffer,1111);
       strncpy(dataBuffer,fileContents+start,end-start+1);

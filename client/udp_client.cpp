@@ -253,20 +253,24 @@ int main(int argc, char ** argv) {
       cout<<"leg end: "<<file.blocks[i].octoLegs[j].end<<endl;
       cout<<"leg's sequenceChec: "<<bitset<8>(file.blocks[i].octoLegs[j].sequenceCheck)<<endl;
       bzero(sendBuffer, 150);
-      sprintf(sendBuffer,"START: %d\nEND: %d", file.blocks[i].octoLegs[j].start,
-	      file.blocks[i].octoLegs[j].end);
-      cout<<"contents of sendBuffer: "<<sendBuffer<<endl;
+      sprintf(sendBuffer,"START: %d\nEND: %d\noctoLegID: %c", file.blocks[i].octoLegs[j].start,
+	      file.blocks[i].octoLegs[j].end, file.blocks[i].octoLegs[j].octoLegID);
+      cout<<"contents of sendBuffer: \n"<<sendBuffer<<endl;
+      //      sleep(5);
       sendto(sock, sendBuffer, 150, 0, (struct sockaddr*)&server_address, sizeof(server_address));
       char dataBuffer[1200];
-      
+      bzero (dataBuffer, 1200);
+    recvData:
       int len = recvfrom(sock, dataBuffer, 1200, 0,NULL,NULL);
       if(len < 0){
 	if(retryCounter < 5){
 	  retryCounter++;
 	  cout<<"recvfrom didn't recvieve anything retrying.\n";
 	  cout<<"retry number: "<<retryCounter<<endl;
+	  goto recvData;
 	}else{
 	  cout<<"Transfer failed. Please try again later."<<endl;
+	  exit(-1);
 	}
       }
       retryCounter = 0;
@@ -274,33 +278,23 @@ int main(int argc, char ** argv) {
       bzero(file.blocks[i].octoLegs[j].legBuff, 1111);
       strncpy(file.blocks[i].octoLegs[j].legBuff,dataBuffer, strlen(dataBuffer));
       strncat(file.blocks[i].octoLegs[j].legBuff,"\0",1);
-      //      strcat(file.blocks[i].octoLegs[j].legBuff,"\0");
     }
     cout<<"-----------------------------------------------------------------"
 	<<endl<<endl<<endl;
   }
   cout<<"number of blocks: "<<file.numOfOctoB<<endl;
-  // FILE *recvFile =
-    //  fopen(argv[1], "wb");
   for(int i = 0; i < file.numOfOctoB;i++){
     for(int j = 0; j < 8; j++){
       if(file.blocks[i].octoLegs[j].start != -1){
 	cout<<"before writing"<<endl;
-	//	cout<"size of buffer"<<file.blocks[i].octoLegs[j].legBuff;
-	
-	//	cout<"size of buffer"<<sizeof(file.blocks[i].octoLegs[j].legBuff);
-	//	fwrite(file.blocks[i].octoLegs[j].legBuff,sizeof(file.blocks[i].octoLegs[j].legBuff[0]),
-	//     sizeof(file.blocks[i].octoLegs[j].legBuff)/sizeof(file.blocks[i].octoLegs[j].legBuff[0]),recvFile);
 	strcat(fileContents,file.blocks[i].octoLegs[j].legBuff);
 	cout<<"after writing"<<endl;
       }
     }
   }
-  //  fwrite(
-  ofstream myfile(argv[1]);
+  ofstream myfile (argv[1]);
   myfile <<fileContents;
   myfile.close();
-  //  fclose(recvFile);
   char closeCon[150] = "FILE RECIEVED";
   sendto(sock,closeCon, 150, 0, (struct sockaddr*)&server_address, sizeof(server_address));
   
