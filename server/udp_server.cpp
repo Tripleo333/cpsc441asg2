@@ -164,6 +164,11 @@ int main(int argc, char *argv[]) {
       cout<<"file has been recieved"<<endl;
       bzero(fileContents, 300000);
       isMidTransfer = false;
+      char finalHandshake[200];
+      bzero (finalHandshake, 200);
+      strcpy(finalHandshake, "CLOSE CONNECTION\0");
+      sendto(sock, finalHandshake, strlen(finalHandshake), 0,
+	     (struct sockaddr*)&client_address, sizeof(client_address));
     }else{
       cout<<"catcher"<<endl; 
     }

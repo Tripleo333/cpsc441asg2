@@ -296,8 +296,23 @@ int main(int argc, char ** argv) {
   myfile <<fileContents;
   myfile.close();
   char closeCon[150] = "FILE RECIEVED";
+  int retries = 0;
+ resendClose:
   sendto(sock,closeCon, 150, 0, (struct sockaddr*)&server_address, sizeof(server_address));
-  
+  char closeConFromServer[200];
+  bzero(closeConFromServer, 200);
+  int recvLen = recvfrom(sock, closeConFromServer, 200, 0, NULL,NULL);
+  if (recvLen < 0){
+    if(retries < 5){
+      cout<<"closing handshake failed... retrying"<<endl;
+      goto resendClose;
+    }else{
+      cout<<"closing connection failed multiple times."<<endl
+	  <<"program terminating"<<endl;
+      exit(-1);
+    }
+    
+  }
   // close the socket
   close(sock);
   return 0;
