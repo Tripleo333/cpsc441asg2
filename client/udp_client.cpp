@@ -46,7 +46,7 @@ struct myFile{
   octoBlock blocks[30];
 };
 char fileContents[300000];
-
+int retryCounter = 0;
 int main(int argc, char ** argv) {
   const char* server_name = "localhost";//loopback
   const int server_port = PORT;
@@ -76,6 +76,14 @@ int main(int argc, char ** argv) {
     printf("could not create socket\n");
     return 1;
   }
+
+  //set socket recv option timer
+  struct timeval timeout;
+  timeout.tv_sec = 1;
+  timeout.tv_usec = 0;
+  setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
+  
+  
   printf("client socket created\n");
   // data that will be sent to the server
   char data_to_send [250];
@@ -84,13 +92,29 @@ int main(int argc, char ** argv) {
   strcat(data_to_send, argv[1]);
   cout<<"contents of data_to_send: "<<data_to_send<<endl;
   // send data
+ retryCon:
   int len =
     sendto(sock, data_to_send, strlen(data_to_send), 0,
 	   (struct sockaddr*)&server_address, sizeof(server_address));
   printf("message has been sent to server\n");
   // received echoed data back
+
   char buffer[1111];
+  bzero(buffer, 1111);
   int recv_bytes=recvfrom(sock, buffer, 1111, 0, NULL, NULL);
+  if (recv_bytes < 0){
+    //timed out and retrying
+    cout<<"connection time out... retrying..."<<endl;
+    if(retryCounter > 5){
+      cout<<"connection failed. Please try again later"<<endl;
+      exit(-1);
+    }else{
+      retryCounter++;
+      goto retryCon;
+    }
+  }else{
+    retryCounter = 0;
+  }
   printf("received bytes = %d\n",recv_bytes);
   buffer[1111] = '\0';
   printf("recieved: '%s'\n", buffer);
@@ -235,7 +259,17 @@ int main(int argc, char ** argv) {
       sendto(sock, sendBuffer, 150, 0, (struct sockaddr*)&server_address, sizeof(server_address));
       char dataBuffer[1200];
       
-      recvfrom(sock, dataBuffer, 1200, 0,NULL,NULL);
+      int len = recvfrom(sock, dataBuffer, 1200, 0,NULL,NULL);
+      if(len < 0){
+	if(retryCounter < 5){
+	  retryCounter++;
+	  cout<<"recvfrom didn't recvieve anything retrying.\n";
+	  cout<<"retry number: "<<retryCounter<<endl;
+	}else{
+	  cout<<"Transfer failed. Please try again later."<<endl;
+	}
+      }
+      retryCounter = 0;
       cout<<"content of dataBuffer"<<dataBuffer<<endl;
       bzero(file.blocks[i].octoLegs[j].legBuff, 1111);
       strncpy(file.blocks[i].octoLegs[j].legBuff,dataBuffer, strlen(dataBuffer));
