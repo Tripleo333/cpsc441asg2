@@ -78,8 +78,11 @@ int main(int argc, char ** argv) {
   }
   printf("client socket created\n");
   // data that will be sent to the server
-  const char* data_to_send = argv[1];
-  
+  char data_to_send [250];
+  bzero(data_to_send, 250);
+  strcat(data_to_send, "FILEREQUEST: ");
+  strcat(data_to_send, argv[1]);
+  cout<<"contents of data_to_send: "<<data_to_send<<endl;
   // send data
   int len =
     sendto(sock, data_to_send, strlen(data_to_send), 0,
@@ -94,15 +97,16 @@ int main(int argc, char ** argv) {
   
   //check if found or not and send ack
   myFile file;
-  file.fileSize = atoi(buffer + 11);
+  file.fileSize = atoi(buffer + 10);
   cout<<"filesize: "<<file.fileSize<<endl;
   
-  if(strstr(buffer,"ERROR!!!") == NULL){
+  if(strstr(buffer,"-1") == NULL){
     //file is found
     cout<<"file found"<<endl;
-    char ack[100] = "ACK file size received\n";
-    sendto(sock, ack, 100, 0, (struct sockaddr*)&server_address, sizeof(server_address));
-    
+    char ack[100];
+    bzero(ack, 100);
+    strcat(ack,"ACK");
+    sendto(sock, ack, 100, 0, (struct sockaddr*)&server_address, sizeof(server_address));    
     strcpy(file.fileName, argv[1]);
   }else{
     //file is not found
@@ -212,7 +216,7 @@ int main(int argc, char ** argv) {
     }
   }
   
-
+  char sendBuffer [150];
   for(int i = 0; i < file.numOfOctoB; i++){
     cout<<"BID of each octoblock "<<file.blocks[i].octoBID<<endl;
     cout<<"start for block "<<file.blocks[i].start<<endl;
@@ -224,12 +228,40 @@ int main(int argc, char ** argv) {
       cout<<"leg start: "<<file.blocks[i].octoLegs[j].start<<endl;
       cout<<"leg end: "<<file.blocks[i].octoLegs[j].end<<endl;
       cout<<"leg's sequenceChec: "<<bitset<8>(file.blocks[i].octoLegs[j].sequenceCheck)<<endl;
+      bzero(sendBuffer, 150);
+      sprintf(sendBuffer,"START: %d\nEND: %d", file.blocks[i].octoLegs[j].start,
+	      file.blocks[i].octoLegs[j].end);
+      cout<<"contents of sendBuffer: "<<sendBuffer<<endl;
+      sendto(sock, sendBuffer, 150, 0, (struct sockaddr*)&server_address, sizeof(server_address));
+      char dataBuffer[1200];
+      
+      recvfrom(sock, dataBuffer, 1200, 0,NULL,NULL);
+      cout<<"content of dataBuffer"<<dataBuffer<<endl;
+      bzero(file.blocks[i].octoLegs[j].legBuff, 1111);
+      strncpy(file.blocks[i].octoLegs[j].legBuff,dataBuffer, strlen(dataBuffer));
+      strncat(file.blocks[i].octoLegs[j].legBuff,"\0",1);
+      //      strcat(file.blocks[i].octoLegs[j].legBuff,"\0");
     }
     cout<<"-----------------------------------------------------------------"
 	<<endl<<endl<<endl;
   }
-
-  
+  cout<<"number of blocks: "<<file.numOfOctoB<<endl;
+  FILE *recvFile =
+  fopen(argv[1], "wb");
+  for(int i = 0; i < file.numOfOctoB;i++){
+    for(int j = 0; j < 8; j++){
+      if(file.blocks[i].octoLegs[j].start != -1){
+	cout<<"before writing"<<endl;
+	//	cout<"size of buffer"<<file.blocks[i].octoLegs[j].legBuff;
+	
+	//	cout<"size of buffer"<<sizeof(file.blocks[i].octoLegs[j].legBuff);
+	fwrite(file.blocks[i].octoLegs[j].legBuff,sizeof(file.blocks[i].octoLegs[j].legBuff[0]),
+	       sizeof(file.blocks[i].octoLegs[j].legBuff)/sizeof(file.blocks[i].octoLegs[j].legBuff[0]),recvFile);
+	cout<<"after writing"<<endl;
+      }
+    }
+  }
+  fclose(recvFile);
   
   // close the socket
   close(sock);
